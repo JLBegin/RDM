@@ -117,4 +117,4 @@ class AirPlane:
         return coatWeight  # , meanX
 
 
-AirPlane().getWingShear()
+AirPlane().getWingShearAndMoment()
