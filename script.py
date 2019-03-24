@@ -13,8 +13,9 @@ Trouver la contrainte dans les cas suivant:
 
 class AirPlane:
     def __init__(self):
-        self.wingLength = 150
+        self.resolution = 1000
 
+        self.wingLength = 150
         self.totalWeight = 0
         self.apparentWeight = 10
         self.nervures = np.array([[25, 50, 80.8, 111.5, 150], [7.13, 5.89, 6.86, 3.35, 3.21]])
@@ -26,34 +27,47 @@ class AirPlane:
         self.gravity = 386.0886
         self.pAlum = 0.101
         self.pFuel = 0.0303
+        self.beamAreaFunc = None
+        self.shear = []
 
     def getWingShearAndMoment(self):
         self.getTotalWeight()
         self.getApparentWeight()
 
-        resolution = 1000
-        A = np.linspace(150, 0, resolution)[1:]
-        Y = []
+        A = np.linspace(150, 0, self.resolution)[1:]
 
         for i, a in enumerate(A):
             shear = self.getWingSectionWeight(a) - self.getAeroLoad(a)
-            Y.append(shear * 4.44822 / 1000)
+            self.shear.append(shear * 4.44822 / 1000)
 
         fig, (ax1, ax2) = plt.subplots(2)
-        ax1.plot(A, Y)
+        ax1.plot(A, self.shear)
         ax1.set_ylabel("Force [kN]")
         ax1.set_xlabel("Distance sur l'aile [pouce]")
 
-        X, Y = list(reversed(A)), list(reversed(Y))
-        Xstep = 150 / (resolution-1)
+        X, self.shear = list(reversed(A)), list(reversed(self.shear))
+        Xstep = 150 / (self.resolution-1)
 
         M = [0]
-        for y in Y:
+        for y in self.shear:
             M.append(y*Xstep + M[-1])
 
         ax2.plot(X, M[1:])
         ax2.set_ylabel("Moment")
 
+        plt.show()
+
+    def getBeamStrain(self):
+        X = np.linspace(0, 150, self.resolution)[1:]
+
+        areas = []
+        x = symbols("x")
+        for d in X:
+            areas.append(self.beamAreaFunc.evalf(subs={x: d}))
+
+        strain = np.array(self.shear) / (2 * np.array(areas))
+
+        plt.plot(X, strain)
         plt.show()
 
     def getTotalWeight(self):
@@ -80,22 +94,22 @@ class AirPlane:
         x = symbols('x')
         beamDistance = 14.4 - 4.8 * x * 10**-2
         beamHeight = 3.296 - 1.08967 * x * 10**-2
-        beamVolumeFunc = ((beamHeight-2*self.tl)*self.tl)+2*self.bl*self.tl
+        beamAreaFunc = ((beamHeight-2*self.tl)*self.tl)+2*self.bl*self.tl
 
-        volumeFunc = beamDistance * beamHeight - 2*beamVolumeFunc
+        areaFunc = beamDistance * beamHeight - 2*beamAreaFunc
 
-        fuelVolume = integrate(volumeFunc, (x, a, b))
-        # meanX = integrate(x*volumeFunc, (x, a, b)) / fuelVolume
+        fuelVolume = integrate(areaFunc, (x, a, b))
+        # meanX = integrate(x*areaFunc, (x, a, b)) / fuelVolume
 
         return fuelVolume  # , meanX
 
     def getBeamVolume(self, a=0, b=150):
         x = symbols('x')
         beamHeight = 3.296 - 1.08967 * x * 10**-2
-        beamVolumeFunc = ((beamHeight-2*self.tl)*self.tl)+2*self.bl*self.tl
+        self.beamAreaFunc = ((beamHeight-2*self.tl)*self.tl)+2*self.bl*self.tl
 
-        beamVolume = integrate(beamVolumeFunc, (x, a, b))
-        # meanX = integrate(x*beamVolumeFunc, (x, a, b)) / beamVolume
+        beamVolume = integrate(self.beamAreaFunc, (x, a, b))
+        # meanX = integrate(x*beamAreaFunc, (x, a, b)) / beamVolume
 
         return beamVolume  # , meanX
 
@@ -117,4 +131,7 @@ class AirPlane:
         return coatWeight  # , meanX
 
 
-AirPlane().getWingShearAndMoment()
+plane = AirPlane()
+
+plane.getWingShearAndMoment()
+# plane.getBeamStrain()
