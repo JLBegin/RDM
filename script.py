@@ -134,4 +134,4 @@ class AirPlane:
 plane = AirPlane()
 
 plane.getWingShearAndMoment()
-# plane.getBeamStrain()
+plane.getBeamStrain()
