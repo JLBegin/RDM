@@ -14,7 +14,7 @@ Trouver la contrainte dans les cas suivant:
 class AirPlane:
     def __init__(self):
         self.chargeFactor = 1
-        self.onGround = True
+        self.onGround = False
         self.resolution = 1000
 
         self.wingLength = 150
